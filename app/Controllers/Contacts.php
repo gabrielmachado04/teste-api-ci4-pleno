@@ -16,6 +16,12 @@ class Contacts extends BaseController
         $this->contactsModel = new ContactsModel();
     }
 
+    //Função para calcular o tempo de processamento
+    public function calculate_processing_time($time_start=0)
+    {
+        return round(microtime(true) - $time_start, 4);
+    }
+
     //Função para retornar todos os contatos
     public function index()
     {
@@ -25,12 +31,10 @@ class Contacts extends BaseController
         //Busca por todos os contacts
         $data = $this->contactsModel->findAll();
 
-        //Calcula o tempo de processamento total
-        $time_duration = round(microtime(true) - $time_start, 4);
         return $this->response->setStatusCode(200)->setJSON([
             'success' => true,
             'contacts'=> $data,
-            'processing_time'=> $time_duration
+            'processing_time'=> $this->calculate_processing_time($time_start),
         ]);
     }
 
@@ -41,15 +45,44 @@ class Contacts extends BaseController
         $time_start = microtime(true);
 
         $data = $this->request->getJSON(); 
+
+        $validationRules = [
+            'name'           => 'required|min_length[3]',
+            'description'    => 'required|min_length[3]',
+            'zip_code'       => 'required|min_length[3]',
+            'country'        => 'required|min_length[3]',
+            'state'          => 'required|min_length[2]',
+            'street_address' => 'required|min_length[2]',
+            'address_number' => 'required|min_length[2]',
+            'city'           => 'required|min_length[2]',
+            'address_line'   => 'required|min_length[2]',
+            'neighborhood'   => 'required|min_length[2]',
+            'phone'          => 'required|min_length[2]',
+            'email'          => 'required|valid_email',
+        ];
+
+        if(!$this->validate($validationRules))
+        {
+            return $this->response->setStatusCode(422)->setJSON(array(
+                "success"=> false, 
+                "message"=> "Validation error", 
+                "Errors"=> $this->validator->getErrors(),
+                "processing_time" => $this->calculate_processing_time($time_start)
+            ));
+        }
         $inserted = $this->contactsModel->insert($data);
-
-        //Calcula o tempo de processamento total
-        $time_duration = round(microtime(true) - $time_start, 4);
-
         if ($inserted){
-            return $this->response->setStatusCode(201)->setJSON(array("success"=> true, "message"=> "Contact inserted successfully", "processing_time" => $time_duration));
+            return $this->response->setStatusCode(201)->setJSON(array(
+                "success"=> true, 
+                "message"=> "Contact inserted successfully", 
+                "processing_time" => $this->calculate_processing_time($time_start)
+            ));
         }else{
-            return $this->response->setStatusCode(400)->setJSON(array("success"=> false, "message"=> "Failed to insert contact"));
+            return $this->response->setStatusCode(400)->setJSON(array(
+                "success"=> false, "message"=> 
+                "Failed to insert contact", 
+                "processing_time" => $this->calculate_processing_time($time_start)
+            ));
         }
     }
 
@@ -67,20 +100,26 @@ class Contacts extends BaseController
 
         //Caso exista, faz a atualização do registro ou retorna que não foi encontrado
         if(empty($data_id)){
-            //Calcula o tempo de processamento total
-            $time_duration = round(microtime(true) - $time_start, 4);
-            return $this->response->setStatusCode(404)->setJSON(array("success"=> false, "message"=> "Contact not found", "processing_time" => $time_duration));
+            return $this->response->setStatusCode(404)->setJSON(array(
+                "success"=> false, 
+                "message"=> "Contact not found", 
+                "processing_time" => $this->calculate_processing_time($time_start)
+            ));
         }else{  
             $updated = $this->contactsModel->update($data_id, (array) $data);
             
-            //Calcula o tempo de processamento total
-            $time_duration = round(microtime(true) - $time_start, 4);
-            
             //Caso o updated tenha tido algum problema, retorna false
             if ($updated){
-                return $this->response->setStatusCode(200)->setJSON(array("success"=> true, "message"=> "Contact updated successfully", "processing_time" => $time_duration));
+                return $this->response->setStatusCode(200)->setJSON(array(
+                    "success"=> true, 
+                    "message"=> "Contact updated successfully", 
+                    "processing_time" => $this->calculate_processing_time($time_start)
+                ));
             }else{
-                return $this->response->setStatusCode(400)->setJSON(array("success"=> false, "message"=> "Failed to update contact", "processing_time" => $time_duration));
+                return $this->response->setStatusCode(400)->setJSON(array(
+                    "success"=> false, "message"=> "Failed to update contact", 
+                    "processing_time" => $this->calculate_processing_time($time_start)
+                ));
             }
         }
     }
@@ -94,10 +133,11 @@ class Contacts extends BaseController
 
         //Caso exista, faz a deleção do registro ou retorna que não foi encontrado
         if(empty($data_id)){
-            //Calcula o tempo de processamento total
-            $time_duration = round(microtime(true) - $time_start, 4);
-
-            return $this->response->setStatusCode(404)->setJSON(array("success"=> false, "message"=> "Contact not found", "processing_time" => $time_duration));
+            return $this->response->setStatusCode(404)->setJSON(array(
+                "success"=> false, 
+                "message"=> "Contact not found", 
+                "processing_time" => $this->calculate_processing_time(($time_start))
+            ));
         }else{  
             $deleted = $this->contactsModel->delete($id);
             
@@ -106,9 +146,17 @@ class Contacts extends BaseController
 
             //Caso o deleted tenha tido algum problema, retorna false
             if ($deleted){
-                return $this->response->setStatusCode(200)->setJSON(array("success"=> true, "message"=> "Contact deleted successfully", "processing_time" => $time_duration));
+                return $this->response->setStatusCode(200)->setJSON(array(
+                    "success"=> true, 
+                    "message"=> "Contact deleted successfully", 
+                    "processing_time" => $this->calculate_processing_time($time_start)
+                ));
             }else{
-                return $this->response->setStatusCode(400)->setJSON(array("success"=> false, "message"=> "Failed to delete contact", "processing_time" => $time_duration));
+                return $this->response->setStatusCode(400)->setJSON(array(
+                    "success"=> false, 
+                    "message"=> "Failed to delete contact", 
+                    "processing_time" => $this->calculate_processing_time($time_start)
+                ));
             }
         }
     }
