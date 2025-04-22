@@ -9,6 +9,20 @@ use App\Models\ContactsModel;
 class Contacts extends BaseController
 {   
     private $contactsModel;
+    private $validationRules = [
+        'name'           => 'required|min_length[3]',
+        'description'    => 'required|min_length[3]',
+        'zip_code'       => 'required|min_length[3]',
+        'country'        => 'required|min_length[3]',
+        'state'          => 'required|min_length[2]',
+        'street_address' => 'required|min_length[2]',
+        'address_number' => 'required|min_length[2]',
+        'city'           => 'required|min_length[2]',
+        'address_line'   => 'required|min_length[2]',
+        'neighborhood'   => 'required|min_length[2]',
+        'phone'          => 'required|min_length[2]',
+        'email'          => 'required|valid_email',
+    ];
 
     //Carregando Model para ser utilizado em todas as funções.
     public function __construct() 
@@ -45,23 +59,9 @@ class Contacts extends BaseController
         $time_start = microtime(true);
 
         $data = $this->request->getJSON(); 
-
-        $validationRules = [
-            'name'           => 'required|min_length[3]',
-            'description'    => 'required|min_length[3]',
-            'zip_code'       => 'required|min_length[3]',
-            'country'        => 'required|min_length[3]',
-            'state'          => 'required|min_length[2]',
-            'street_address' => 'required|min_length[2]',
-            'address_number' => 'required|min_length[2]',
-            'city'           => 'required|min_length[2]',
-            'address_line'   => 'required|min_length[2]',
-            'neighborhood'   => 'required|min_length[2]',
-            'phone'          => 'required|min_length[2]',
-            'email'          => 'required|valid_email',
-        ];
-
-        if(!$this->validate($validationRules))
+        
+        //Verifica e valida todos os campos obrigatórios
+        if(!$this->validate($this->validationRules))
         {
             return $this->response->setStatusCode(422)->setJSON(array(
                 "success"=> false, 
@@ -94,6 +94,17 @@ class Contacts extends BaseController
 
         //Armazena os dados enviados via json
         $data = $this->request->getJSON(); 
+
+        //Verifica e valida todos os campos obrigatórios
+        if(!$this->validate($this->validationRules))
+        {
+            return $this->response->setStatusCode(422)->setJSON(array(
+                "success"=> false, 
+                "message"=> "Validation error", 
+                "Errors"=> $this->validator->getErrors(),
+                "processing_time" => $this->calculate_processing_time($time_start)
+            ));
+        }
 
         //Busca se existe algum contato com esse id
         $data_id = $this->contactsModel->find($id);
