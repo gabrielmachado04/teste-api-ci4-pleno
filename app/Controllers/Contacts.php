@@ -96,6 +96,10 @@ class Contacts extends BaseController
                 "processing_time" => $this->calculate_processing_time($time_start)
             ));
         }
+
+        $db = \Config\Database::connect();
+        $db->transStart();
+
         $inserted = $this->contactsModel->insert($data);
         if ($inserted)
         {
@@ -107,10 +111,11 @@ class Contacts extends BaseController
             $this->phoneModel   = new PhoneModel();
 
             $addressValid = $this->validate($this->addressModel->validationRules);
-            $emailValid = $this->validate($this->emailModel->validationRules);
-            $phoneValid = $this->validate($this->phoneModel->validationRules);
+            $emailValid   = $this->validate($this->emailModel->validationRules);
+            $phoneValid   = $this->validate($this->phoneModel->validationRules);
             if(!$addressValid || !$emailValid && !$phoneValid)
             {
+                $db->transRollback();
                 return $this->response->setStatusCode(422)->setJSON(array(
                     "success"=> false, 
                     "message"=> "Validation error", 
@@ -122,6 +127,7 @@ class Contacts extends BaseController
                 $data_zip_code_valid = $this->addressModel->validate_viacep($data->zip_code);
                 if(isset($data_zip_code_valid['erro']))
                 {
+                    $db->transRollback();
                     return $this->response->setStatusCode(400)->setJSON(array(
                         "success"=> false, "message"=> 
                         "Invalid zip code from ViaCep", 
@@ -156,12 +162,14 @@ class Contacts extends BaseController
     
                     if($inserted_address && $inserted_phone && $inserted_email)
                     {
+                        $db->transCommit();
                         return $this->response->setStatusCode(201)->setJSON(array(
                             "success"=> true, 
                             "message"=> "Contact inserted successfully", 
                             "processing_time" => $this->calculate_processing_time($time_start)
                         ));
                     }else{
+                        $db->transRollback();
                         return $this->response->setStatusCode(400)->setJSON(array(
                             "success"=> false, "message"=> 
                             "Failed to insert contact", 
@@ -172,6 +180,7 @@ class Contacts extends BaseController
             }
             
         }else{
+            $db->transRollback();
             return $this->response->setStatusCode(400)->setJSON(array(
                 "success"=> false, "message"=> 
                 "Failed to insert contact", 
@@ -200,11 +209,15 @@ class Contacts extends BaseController
             ));
         }
 
+        $db = \Config\Database::connect();
+        $db->transStart();
+
         //Busca se existe algum contato com esse id
         $data_id = $this->contactsModel->find($id);
 
         //Caso exista, faz a atualização do registro ou retorna que não foi encontrado
         if(empty($data_id)){
+            $db->transRollback();
             return $this->response->setStatusCode(404)->setJSON(array(
                 "success"=> false, 
                 "message"=> "Contact not found", 
@@ -224,6 +237,7 @@ class Contacts extends BaseController
                 $phoneValid   = $this->validate($this->phoneModel->validationRules);
                 if(!$addressValid || !$emailValid && !$phoneValid)
                 {
+                    $db->transRollback();
                     return $this->response->setStatusCode(422)->setJSON(array(
                         "success"=> false, 
                         "message"=> "Validation error", 
@@ -236,6 +250,7 @@ class Contacts extends BaseController
                     $data_zip_code_valid = $this->addressModel->validate_viacep($data->zip_code);
                     if(isset($data_zip_code_valid['erro']))
                     {
+                        $db->transRollback();
                         return $this->response->setStatusCode(400)->setJSON(array(
                             "success"=> false, "message"=> 
                             "Invalid zip code from ViaCep", 
@@ -270,12 +285,14 @@ class Contacts extends BaseController
         
                         if($updated_address && $updated_phone && $updated_email)
                         {
+                            $db->transCommit();
                             return $this->response->setStatusCode(200)->setJSON(array(
                                 "success"=> true, 
                                 "message"=> "Contact updated successfully", 
                                 "processing_time" => $this->calculate_processing_time($time_start)
                             ));
                         }else{
+                            $db->transRollback();
                             return $this->response->setStatusCode(400)->setJSON(array(
                                 "success"=> false, "message"=> 
                                 "Failed to update contact", 
@@ -285,6 +302,7 @@ class Contacts extends BaseController
                     }
                 }
             }else{
+                $db->transRollback();
                 return $this->response->setStatusCode(400)->setJSON(array(
                     "success"=> false, "message"=> "Failed to update contact", 
                     "processing_time" => $this->calculate_processing_time($time_start)
