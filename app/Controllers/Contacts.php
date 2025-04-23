@@ -85,44 +85,57 @@ class Contacts extends BaseController
                     "processing_time" => $this->calculate_processing_time($time_start)
                 ));
             }else{
-                $data_address = [
-                    'id_contatct'    => $inserted_id,
-                    'zip_code'       => $data->zip_code,
-                    'country'        => $data->country,
-                    'state'          => $data->state,
-                    'street_address' => $data->street_address,
-                    'address_number' => $data->address_number,
-                    'city'           => $data->city,
-                    'address_line'   => $data->address_line,
-                    'neighborhood'   => $data->neighborhood,  
-                ];
-                $inserted_address = $this->addressModel->insert($data_address);
-
-                $data_phone = [
-                    'id_contatct'    => $inserted_id,
-                    'phone'          => $data->phone,
-                ];
-                $inserted_phone = $this->phoneModel->insert($data_phone);
-
-                $data_email = [
-                    'id_contatct'    => $inserted_id,
-                    'email'          => $data->email,
-                ];
-                $inserted_email = $this->emailModel->insert($data_email);
-
-                if($inserted_address && $inserted_phone && $inserted_email)
+                //Validando zip_code com a api do ViaCep
+                $data_zip_code_valid = $this->addressModel->validate_viacep($data->zip_code);
+                //var_dump($data_zip_code_valid);
+                if(isset($data_zip_code_valid['erro']))
                 {
-                    return $this->response->setStatusCode(201)->setJSON(array(
-                        "success"=> true, 
-                        "message"=> "Contact inserted successfully", 
-                        "processing_time" => $this->calculate_processing_time($time_start)
-                    ));
-                }else{
                     return $this->response->setStatusCode(400)->setJSON(array(
                         "success"=> false, "message"=> 
-                        "Failed to insert contact", 
+                        "Invalid zip code from ViaCep", 
                         "processing_time" => $this->calculate_processing_time($time_start)
                     ));
+                }else
+                {
+                    $data_address = [
+                        'id_contatct'    => $inserted_id,
+                        'zip_code'       => $data->zip_code,
+                        'country'        => $data->country,
+                        'state'          => $data->state,
+                        'street_address' => $data->street_address,
+                        'address_number' => $data->address_number,
+                        'city'           => $data->city,
+                        'address_line'   => $data->address_line,
+                        'neighborhood'   => $data->neighborhood,  
+                    ];
+                    $inserted_address = $this->addressModel->insert($data_address);
+    
+                    $data_phone = [
+                        'id_contatct'    => $inserted_id,
+                        'phone'          => $data->phone,
+                    ];
+                    $inserted_phone = $this->phoneModel->insert($data_phone);
+    
+                    $data_email = [
+                        'id_contatct'    => $inserted_id,
+                        'email'          => $data->email,
+                    ];
+                    $inserted_email = $this->emailModel->insert($data_email);
+    
+                    if($inserted_address && $inserted_phone && $inserted_email)
+                    {
+                        return $this->response->setStatusCode(201)->setJSON(array(
+                            "success"=> true, 
+                            "message"=> "Contact inserted successfully", 
+                            "processing_time" => $this->calculate_processing_time($time_start)
+                        ));
+                    }else{
+                        return $this->response->setStatusCode(400)->setJSON(array(
+                            "success"=> false, "message"=> 
+                            "Failed to insert contact", 
+                            "processing_time" => $this->calculate_processing_time($time_start)
+                        ));
+                    }
                 }
             }
             

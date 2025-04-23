@@ -43,4 +43,15 @@ class AddressModel extends Model
         'address_line'   => 'required|min_length[3]',
         'neighborhood'   => 'required|min_length[3]',
     ];
+
+    public function validate_viacep($cep)
+    {
+        $client_request = \Config\Services::curlrequest();
+        $response  = $client_request->get('viacep.com.br/ws/'.$cep.'/json/');
+        if($response->getStatusCode() == 200)
+        {
+            $dados = json_decode($response->getBody(), true);
+            return $dados;
+        }
+    }
 }
