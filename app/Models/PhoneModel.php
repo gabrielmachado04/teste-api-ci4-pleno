@@ -4,17 +4,17 @@ namespace App\Models;
 
 use CodeIgniter\Model;
 
-class ContactsModel extends Model
+class PhoneModel extends Model
 {
-    protected $table            = 'contacts';
+    protected $table            = 'phone';
     protected $primaryKey       = 'id';
     protected $useAutoIncrement = true;
     protected $returnType       = 'array';
     protected $useSoftDeletes   = false;
     protected $protectFields    = true;
     protected $allowedFields    = [
-        'name',
-        'description'
+        'id_contatct',
+        'phone'
     ];
 
     protected bool $allowEmptyInserts = false;
@@ -24,11 +24,10 @@ class ContactsModel extends Model
     protected $dateFormat    = 'datetime';
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
+    protected $deletedField  = 'deleted_at';
 
-    //Validation
-
-    protected $validationRules = [
-        'name'           => 'required|min_length[3]',
-        'description'    => 'required|min_length[3]',
+    // Validation
+    protected $validationRules      = [
+        'phone'          => 'required|min_length[2]',
     ];
 }

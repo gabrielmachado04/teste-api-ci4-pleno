@@ -4,17 +4,17 @@ namespace App\Models;
 
 use CodeIgniter\Model;
 
-class ContactsModel extends Model
+class EmailModel extends Model
 {
-    protected $table            = 'contacts';
+    protected $table            = 'email';
     protected $primaryKey       = 'id';
     protected $useAutoIncrement = true;
     protected $returnType       = 'array';
     protected $useSoftDeletes   = false;
     protected $protectFields    = true;
     protected $allowedFields    = [
-        'name',
-        'description'
+        'id_contatct',
+        'email'
     ];
 
     protected bool $allowEmptyInserts = false;
@@ -25,10 +25,8 @@ class ContactsModel extends Model
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
 
-    //Validation
-
-    protected $validationRules = [
-        'name'           => 'required|min_length[3]',
-        'description'    => 'required|min_length[3]',
+    // Validation
+    protected $validationRules      = [
+        'email'=> 'required|valid_email',
     ];
 }

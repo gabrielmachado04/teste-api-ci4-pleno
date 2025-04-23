@@ -5,24 +5,17 @@ namespace App\Controllers;
 use App\Controllers\BaseController;
 
 use App\Models\ContactsModel;
+use App\Models\AddressModel;
+use App\Models\EmailModel;
+use App\Models\PhoneModel;
+use Config\Email;
 
 class Contacts extends BaseController
 {   
     private $contactsModel;
-    private $validationRules = [
-        'name'           => 'required|min_length[3]',
-        'description'    => 'required|min_length[3]',
-        'zip_code'       => 'required|min_length[3]',
-        'country'        => 'required|min_length[3]',
-        'state'          => 'required|min_length[2]',
-        'street_address' => 'required|min_length[2]',
-        'address_number' => 'required|min_length[2]',
-        'city'           => 'required|min_length[2]',
-        'address_line'   => 'required|min_length[2]',
-        'neighborhood'   => 'required|min_length[2]',
-        'phone'          => 'required|min_length[2]',
-        'email'          => 'required|valid_email',
-    ];
+    private $addressModel;
+    private $phoneModel;
+    private $emailModel;
 
     //Carregando Model para ser utilizado em todas as funções.
     public function __construct() 
@@ -61,7 +54,7 @@ class Contacts extends BaseController
         $data = $this->request->getJSON(); 
         
         //Verifica e valida todos os campos obrigatórios
-        if(!$this->validate($this->validationRules))
+        if(!$this->validate($this->contactsModel->validationRules))
         {
             return $this->response->setStatusCode(422)->setJSON(array(
                 "success"=> false, 
@@ -71,12 +64,12 @@ class Contacts extends BaseController
             ));
         }
         $inserted = $this->contactsModel->insert($data);
-        if ($inserted){
-            return $this->response->setStatusCode(201)->setJSON(array(
-                "success"=> true, 
-                "message"=> "Contact inserted successfully", 
-                "processing_time" => $this->calculate_processing_time($time_start)
-            ));
+        if ($inserted)
+        {
+            //Captura o id inserido no banco
+            $inserted_id = $this->contactsModel->getInsertID();
+            
+            
         }else{
             return $this->response->setStatusCode(400)->setJSON(array(
                 "success"=> false, "message"=> 
@@ -96,7 +89,7 @@ class Contacts extends BaseController
         $data = $this->request->getJSON(); 
 
         //Verifica e valida todos os campos obrigatórios
-        if(!$this->validate($this->validationRules))
+        if(!$this->validate($this->contactsModel->validationRules))
         {
             return $this->response->setStatusCode(422)->setJSON(array(
                 "success"=> false, 
