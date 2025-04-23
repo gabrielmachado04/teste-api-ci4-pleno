@@ -49,8 +49,8 @@ class Contacts extends BaseController
             $contact_description = $contact['description'];
 
             $data_address = $this->addressModel->where('id_contatct', $contact_id)->first();
-            $data_email= $this->emailModel->where('id_contatct', $contact_id)->first();
-            $data_phone = $this->phoneModel->where('id_contatct', $contact_id)->first();
+            $data_email   = $this->emailModel->where('id_contatct', $contact_id)->first();
+            $data_phone   = $this->phoneModel->where('id_contatct', $contact_id)->first();
 
             $all_contacts[] = [
                 'id'             => $contact_id,
