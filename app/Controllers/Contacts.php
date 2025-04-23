@@ -35,12 +35,47 @@ class Contacts extends BaseController
         //Armazena a data de início do processamento
         $time_start = microtime(true);
 
+        $this->addressModel = new AddressModel();
+        $this->emailModel   = new EmailModel();
+        $this->phoneModel   = new PhoneModel();
+
         //Busca por todos os contacts
-        $data = $this->contactsModel->findAll();
+        $data_contacts = $this->contactsModel->findAll();
+        $all_contacts = [];
+        foreach ($data_contacts as $contact)
+        {
+            $contact_id = $contact['id'];
+            $contact_name = $contact['id'];
+            $contact_description = $contact['description'];
+
+            $data_address = $this->addressModel->where('id_contatct', $contact_id)->first();
+            $data_email= $this->emailModel->where('id_contatct', $contact_id)->first();
+            $data_phone = $this->phoneModel->where('id_contatct', $contact_id)->first();
+
+            $all_contacts[] = [
+                'id'             => $contact_id,
+                'name'           => $contact_name,
+                'description'    => $contact_description,
+
+                'zip_code'       => $data_address['zip_code'],
+                'country'        => $data_address['country'],
+                'state'          => $data_address['state'],
+                'street_address' => $data_address['street_address'],
+                'address_number' => $data_address['address_number'],
+                'city'           => $data_address['city'],
+                'address_line'   => $data_address['address_line'],
+                'neighborhood'   => $data_address['neighborhood'],
+
+                'phone'          => $data_phone['phone'],
+                'email'          => $data_email['email'],
+            ];
+        }
+
+        //var_dump($all_contacts);
 
         return $this->response->setStatusCode(200)->setJSON([
             'success' => true,
-            'contacts'=> $data,
+            'contacts'=> $all_contacts,
             'processing_time'=> $this->calculate_processing_time($time_start),
         ]);
     }
