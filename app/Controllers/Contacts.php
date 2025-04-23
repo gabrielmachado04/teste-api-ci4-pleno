@@ -308,13 +308,21 @@ class Contacts extends BaseController
                 "processing_time" => $this->calculate_processing_time(($time_start))
             ));
         }else{  
-            $deleted = $this->contactsModel->delete($id);
+            $this->addressModel = new AddressModel();
+            $this->emailModel   = new EmailModel();
+            $this->phoneModel   = new PhoneModel();
+
+            $deleted_contact = $this->contactsModel->delete($id);
+            $deleted_address = $this->addressModel->where("id_contatct", $id)->delete();
+            $deleted_email = $this->emailModel->where("id_contatct", $id)->delete();
+            $deleted_phone = $this->phoneModel->where("id_contatct", $id)->delete();
             
             //Calcula o tempo de processamento total
             $time_duration = round(microtime(true) - $time_start, 4);
 
             //Caso o deleted tenha tido algum problema, retorna false
-            if ($deleted){
+            if ($deleted_contact && $deleted_address && $deleted_email || $deleted_phone) 
+            {
                 return $this->response->setStatusCode(200)->setJSON(array(
                     "success"=> true, 
                     "message"=> "Contact deleted successfully", 
