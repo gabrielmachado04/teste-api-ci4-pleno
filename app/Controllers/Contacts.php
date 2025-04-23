@@ -87,6 +87,7 @@ class Contacts extends BaseController
             }else{
                 $data_address = [
                     'id_contatct'    => $inserted_id,
+
                     'zip_code'       => $data->zip_code,
                     'country'        => $data->country,
                     'state'          => $data->state,
@@ -100,12 +101,14 @@ class Contacts extends BaseController
 
                 $data_phone = [
                     'id_contatct'    => $inserted_id,
+
                     'phone'          => $data->phone,
                 ];
                 $inserted_phone = $this->phoneModel->insert($data_phone);
 
                 $data_email = [
                     'id_contatct'    => $inserted_id,
+                    
                     'email'          => $data->email,
                 ];
                 $inserted_email = $this->emailModel->insert($data_email);
