@@ -45,7 +45,7 @@ class Contacts extends BaseController
         foreach ($data_contacts as $contact)
         {
             $contact_id = $contact['id'];
-            $contact_name = $contact['id'];
+            $contact_name = $contact['name'];
             $contact_description = $contact['description'];
 
             $data_address = $this->addressModel->where('id_contatct', $contact_id)->first();
@@ -70,8 +70,6 @@ class Contacts extends BaseController
                 'email'          => $data_email['email'],
             ];
         }
-
-        //var_dump($all_contacts);
 
         return $this->response->setStatusCode(200)->setJSON([
             'success' => true,
