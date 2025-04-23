@@ -87,7 +87,6 @@ class Contacts extends BaseController
             }else{
                 //Validando zip_code com a api do ViaCep
                 $data_zip_code_valid = $this->addressModel->validate_viacep($data->zip_code);
-                //var_dump($data_zip_code_valid);
                 if(isset($data_zip_code_valid['erro']))
                 {
                     return $this->response->setStatusCode(400)->setJSON(array(

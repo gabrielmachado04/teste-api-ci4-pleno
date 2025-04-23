@@ -46,12 +46,19 @@ class AddressModel extends Model
 
     public function validate_viacep($cep)
     {
-        $client_request = \Config\Services::curlrequest();
-        $response  = $client_request->get('viacep.com.br/ws/'.$cep.'/json/');
-        if($response->getStatusCode() == 200)
+        try
         {
-            $dados = json_decode($response->getBody(), true);
-            return $dados;
+            $client_request = \Config\Services::curlrequest();
+            $response  = $client_request->get('viacep.com.br/ws/'.$cep.'/json/');
+            
+            if($response->getStatusCode() == 200)
+            {
+                $dados = json_decode($response->getBody(), true);
+                return $dados;
+            }
+        }catch(\Exception $e)
+        {
+            return ['erro' => true];
         }
     }
 }
