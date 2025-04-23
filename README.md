@@ -2,24 +2,41 @@
 
 Esta é uma API simples construída com CodeIgniter 4 para o gerenciamento de contatos.
 
-## Framework e tecnologias utilizadas
-Foi utilizado o Framework CodeIgniter4, PHP 8.0 e um banco de dados MySQL.
+## Tecnologias utilizadas
 
-## Endpoints
+- CodeIgniter4 (Framework)
+- PHP 8.0
+- MySQL
 
-### 1. GET - /contacts
-Endpoint dedicado à listar todos os contatos cadastrados.
+## Instalação do projeto
 
-### 2. POST - /contacts
-Endpoint dedicado à criação de um novo contato.
+Para fazer a instalação do projeto, primeiro clone o repositório para sua máquina.
 
-### 3. PUT - /contacts/id
-Endpoint dedicado à edição de um contato.
+```bash
+  git clone https://github.com/gabrielmachado04/teste-api-ci4-pleno
+```
 
-### 4. DELETE - /contacts/id
-Endpoint dedicado à deleção de um contato.
+Após este primeiro passo, configure os arquivos essenciais como nome do banco de dados e credenciais.
 
+Em seguida, execute os comandos para geração dos bancos e fazer a primeira população de dados para a execução dos testes.
+
+```bash
+  php spark migrate
+  php spark db:seed Contacts
+```
+
+Para a execução, daremos exemplos de como utilizar o projeto utilizando o XAMPP.
+
+- Inicialize o servidor Apache, assim como o MySQL.
+- Mova o projeto para a pasta htdocs, normalmente localizada em: C:\xampp\htdocs
+
+Após a incialização e o projeto no local correto, apenas execute os testes da API utilizando a sua ferramenta de preferência, por exemplo Postman.
+
+Em nossa documentação é possível importar todas as requests e parâmetros para o Postman e efetuar um teste completo dos endpoints e retornos do projeto.
 ## Documentação
-Todo o sistema foi validado, testado e documentado usando Postman. Segue abaixo o link para acesso da documentação detalhada.
+Segue a documentação detalhada com todas as requests, parâmetros e métodos de exemplo para a execução da API.
 
-https://documenter.getpostman.com/view/18096746/2sB2iwHFBy
+Lá são mostrados alguns exemplos incluindo os parâmetros obrigatórios, validações, assim como retornos esperados pela API.
+
+[Documenter](https://documenter.getpostman.com/view/18096746/2sB2iwHFBy)
+
