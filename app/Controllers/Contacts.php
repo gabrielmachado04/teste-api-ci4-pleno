@@ -69,6 +69,62 @@ class Contacts extends BaseController
             //Captura o id inserido no banco
             $inserted_id = $this->contactsModel->getInsertID();
             
+            $this->addressModel = new AddressModel();
+            $this->emailModel   = new EmailModel();
+            $this->phoneModel   = new PhoneModel();
+
+            $addressValid = $this->validate($this->addressModel->validationRules);
+            $emailValid = $this->validate($this->emailModel->validationRules);
+            $phoneValid = $this->validate($this->phoneModel->validationRules);
+            if(!$addressValid || !$emailValid && !$phoneValid)
+            {
+                return $this->response->setStatusCode(422)->setJSON(array(
+                    "success"=> false, 
+                    "message"=> "Validation error", 
+                    "Errors"=> $this->validator->getErrors(),
+                    "processing_time" => $this->calculate_processing_time($time_start)
+                ));
+            }else{
+                $data_address = [
+                    'id_contatct'    => $inserted_id,
+                    'zip_code'       => $data->zip_code,
+                    'country'        => $data->country,
+                    'state'          => $data->state,
+                    'street_address' => $data->street_address,
+                    'address_number' => $data->address_number,
+                    'city'           => $data->city,
+                    'address_line'   => $data->address_line,
+                    'neighborhood'   => $data->neighborhood,  
+                ];
+                $inserted_address = $this->addressModel->insert($data_address);
+
+                $data_phone = [
+                    'id_contatct'    => $inserted_id,
+                    'phone'          => $data->phone,
+                ];
+                $inserted_phone = $this->phoneModel->insert($data_phone);
+
+                $data_email = [
+                    'id_contatct'    => $inserted_id,
+                    'email'          => $data->email,
+                ];
+                $inserted_email = $this->emailModel->insert($data_email);
+
+                if($inserted_address && $inserted_phone && $inserted_email)
+                {
+                    return $this->response->setStatusCode(201)->setJSON(array(
+                        "success"=> true, 
+                        "message"=> "Contact inserted successfully", 
+                        "processing_time" => $this->calculate_processing_time($time_start)
+                    ));
+                }else{
+                    return $this->response->setStatusCode(400)->setJSON(array(
+                        "success"=> false, "message"=> 
+                        "Failed to insert contact", 
+                        "processing_time" => $this->calculate_processing_time($time_start)
+                    ));
+                }
+            }
             
         }else{
             return $this->response->setStatusCode(400)->setJSON(array(
