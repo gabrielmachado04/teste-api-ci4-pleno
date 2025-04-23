@@ -182,11 +182,75 @@ class Contacts extends BaseController
             
             //Caso o updated tenha tido algum problema, retorna false
             if ($updated){
-                return $this->response->setStatusCode(200)->setJSON(array(
-                    "success"=> true, 
-                    "message"=> "Contact updated successfully", 
-                    "processing_time" => $this->calculate_processing_time($time_start)
-                ));
+                $this->addressModel = new AddressModel();
+                $this->emailModel   = new EmailModel();
+                $this->phoneModel   = new PhoneModel();
+
+                $addressValid = $this->validate($this->addressModel->validationRules);
+                $emailValid   = $this->validate($this->emailModel->validationRules);
+                $phoneValid   = $this->validate($this->phoneModel->validationRules);
+                if(!$addressValid || !$emailValid && !$phoneValid)
+                {
+                    return $this->response->setStatusCode(422)->setJSON(array(
+                        "success"=> false, 
+                        "message"=> "Validation error", 
+                        "Errors"=> $this->validator->getErrors(),
+                        "processing_time" => $this->calculate_processing_time($time_start)
+                    ));
+                }else
+                {
+                    //Validando zip_code com a api do ViaCep
+                    $data_zip_code_valid = $this->addressModel->validate_viacep($data->zip_code);
+                    if(isset($data_zip_code_valid['erro']))
+                    {
+                        return $this->response->setStatusCode(400)->setJSON(array(
+                            "success"=> false, "message"=> 
+                            "Invalid zip code from ViaCep", 
+                            "processing_time" => $this->calculate_processing_time($time_start)
+                        ));
+                    }else
+                    {
+                        $data_address = [
+                            //'id_contatct'    => $data_id,
+                            'zip_code'       => $data->zip_code,
+                            'country'        => $data->country,
+                            'state'          => $data->state,
+                            'street_address' => $data->street_address,
+                            'address_number' => $data->address_number,
+                            'city'           => $data->city,
+                            'address_line'   => $data->address_line,
+                            'neighborhood'   => $data->neighborhood,  
+                        ];
+                        $updated_address = $this->addressModel->where('id_contatct', $id)->set($data_address)->update();  
+        
+                        $data_phone = [
+                            //'id_contatct'    => $data_id,
+                            'phone'          => $data->phone,
+                        ];
+                        $updated_phone = $this->phoneModel->where('id_contatct', $id)->set($data_phone)->update();  
+        
+                        $data_email = [
+                            //'id_contatct'    => $data_id,
+                            'email'          => $data->email,
+                        ];
+                        $updated_email = $this->emailModel->where('id_contatct', $id)->set($data_email)->update(); 
+        
+                        if($updated_address && $updated_phone && $updated_email)
+                        {
+                            return $this->response->setStatusCode(200)->setJSON(array(
+                                "success"=> true, 
+                                "message"=> "Contact updated successfully", 
+                                "processing_time" => $this->calculate_processing_time($time_start)
+                            ));
+                        }else{
+                            return $this->response->setStatusCode(400)->setJSON(array(
+                                "success"=> false, "message"=> 
+                                "Failed to update contact", 
+                                "processing_time" => $this->calculate_processing_time($time_start)
+                            ));
+                        }
+                    }
+                }
             }else{
                 return $this->response->setStatusCode(400)->setJSON(array(
                     "success"=> false, "message"=> "Failed to update contact", 
