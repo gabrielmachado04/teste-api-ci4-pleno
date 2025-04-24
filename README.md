@@ -26,6 +26,10 @@ Em seguida, execute os comandos para geração dos bancos e fazer a primeira pop
   php spark db:seed Contacts
 ```
 
+Por padrão, foi definido um total de 10 registros aleatórios para a primeira população das tabelas, mas isto pode ser facilmente alterado na seed Contacts.
+
+Os dados são gerados aleatoriamente através da lib "Faker".
+
 Para a execução, daremos exemplos de como utilizar o projeto utilizando o XAMPP.
 
 - Inicialize o servidor Apache, assim como o MySQL.
@@ -46,11 +50,13 @@ Foram desenvolvidos pequenos testes unitários em cada um dos endpoints em difer
 
 Porém automatizamos aqui alguns testes para validação de parâmetros e validações em massa.
 
-- testIndex
-- testDelete
-- testInsert
-- testInsertZipInvalid
-- testUpdate
+- testIndex (Endpoint de listagem dos dados)
+- testDelete (Endpoint de deleção dos dados)
+- testInsert (Endpoint de inserção dos dados)
+- testInsertZipInvalid (Inserção com zip_code inválido pelo ViaCep)
+- testUpdate (Endpoint de atualização dos dados)
+- testUpdateNonExistentName (Atualização sem enviar o nome)
+- testUpdateInvalidEmail (Atualização com e-mail inválido)
 
 Os testes podem ser executados através do PHP Unit, utilizando o código:
 
@@ -70,10 +76,16 @@ O cache foi definido por padrão com um tempo limite de 3 minutos, ou até que a
 
 O tempo de resposta otimizado pelo cache ou index, pode ser observado no retorno das requests, pelo campo "processing_time".
 
+## Segurança
+
+Foram implementados recursos de segurança em todos os endpoints, contra SQL Injection e XSS, utilizando os recursos disponibilizados pelo próprio framework. 
+
+Além disso, todas as requests de Insert ou Update, contam com recursos de "Rollback", caso aconteça alguma falha durante a modificação do banco. Isso garante a segurança dos dados e consistência dos valores.
+
+
 ## Documentação
-Segue a documentação detalhada com todas as requests, parâmetros e métodos de exemplo para a execução da API.
+Segue a documentação detalhada com todas as requests, parâmetros e métodos de exemplo para a execução da API via Postman.
 
 Lá são mostrados alguns exemplos incluindo os parâmetros obrigatórios, validações, assim como retornos e valores esperados pela API.
 
-[Documenter](https://documenter.getpostman.com/view/18096746/2sB2iwHFBy)
-
+[Documentação via Postman](https://documenter.getpostman.com/view/18096746/2sB2iwHFBy)
