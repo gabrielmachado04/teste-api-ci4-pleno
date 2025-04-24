@@ -17,7 +17,14 @@ Para fazer a instalação do projeto, primeiro clone o repositório para sua má
   git clone https://github.com/gabrielmachado04/teste-api-ci4-pleno.git
 ```
 
-Após este primeiro passo, configure os arquivos essenciais como nome do banco de dados e credenciais.
+Após este primeiro passo, configure os arquivos essenciais como nome do banco de dados e credenciais renomeando o arquivo .env
+
+
+Baixe e instale o Composer.
+
+```bash
+  https://getcomposer.org/Composer-Setup.exe
+```
 
 Em seguida, execute os comandos para geração dos bancos e fazer a primeira população de dados para a execução dos testes.
 
@@ -26,9 +33,18 @@ Em seguida, execute os comandos para geração dos bancos e fazer a primeira pop
   php spark db:seed Contacts
 ```
 
-Por padrão, foi definido um total de 10 registros aleatórios para a primeira população das tabelas, mas isto pode ser facilmente alterado na seed Contacts.
+Por padrão, foi definido um total de 10 registros aleatórios para a primeira população das tabelas, mas isto pode ser facilmente alterado na seed Contacts. Os dados são gerados aleatoriamente através da lib "Faker".
 
-Os dados são gerados aleatoriamente através da lib "Faker".
+## Instalação do Redis
+
+Para instalação do Cache Redis no windows, faça o download da versão mais recente do executável no repositório do projeto oficial.
+
+```bash
+  https://github.com/microsoftarchive/redis/releases/download/win-3.0.504/Redis-x64-3.0.504.msi
+```
+Após o download, apenas execute a instalação do serviço.
+
+## Execução do projeto
 
 Para a execução, daremos exemplos de como utilizar o projeto utilizando o XAMPP.
 
