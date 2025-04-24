@@ -8,7 +8,7 @@ use App\Models\ContactsModel;
 use App\Models\AddressModel;
 use App\Models\EmailModel;
 use App\Models\PhoneModel;
-use Config\Email;
+use Predis\Client;
 
 class Contacts extends BaseController
 {   
@@ -16,11 +16,14 @@ class Contacts extends BaseController
     private $addressModel;
     private $phoneModel;
     private $emailModel;
+    private $isFromCache = false;
+    private $cache;
 
     //Carregando Model para ser utilizado em todas as funções.
     public function __construct() 
     {
         $this->contactsModel = new ContactsModel();
+        $this->cache = new Client();
     }
 
     //Função para calcular o tempo de processamento
@@ -31,49 +34,61 @@ class Contacts extends BaseController
 
     //Função para retornar todos os contatos
     public function index()
-    {
+    {   
         //Armazena a data de início do processamento
         $time_start = microtime(true);
 
-        $this->addressModel = new AddressModel();
-        $this->emailModel   = new EmailModel();
-        $this->phoneModel   = new PhoneModel();
+        //Busca pelo cache com a última consulta
+        $data_cache = $this->cache->get('consulta_sql_cache');
 
-        //Busca por todos os contacts
-        $data_contacts = $this->contactsModel->findAll();
-        $all_contacts = [];
-        foreach ($data_contacts as $contact)
-        {
-            $contact_id = $contact['id'];
-            $contact_name = $contact['name'];
-            $contact_description = $contact['description'];
+        if (!$data_cache) {
+            $this->addressModel = new AddressModel();
+            $this->emailModel   = new EmailModel();
+            $this->phoneModel   = new PhoneModel();
 
-            $data_address = $this->addressModel->where('id_contatct', $contact_id)->first();
-            $data_email   = $this->emailModel->where('id_contatct', $contact_id)->first();
-            $data_phone   = $this->phoneModel->where('id_contatct', $contact_id)->first();
+            $data_contacts = $this->contactsModel->findAll();
+            
+            $all_contacts = [];
+            foreach ($data_contacts as $contact)
+            {
+                $contact_id = $contact['id'];
+                $contact_name = $contact['name'];
+                $contact_description = $contact['description'];
 
-            $all_contacts[] = [
-                'id'             => $contact_id,
-                'name'           => $contact_name,
-                'description'    => $contact_description,
+                $data_address = $this->addressModel->where('id_contatct', $contact_id)->first();
+                $data_email   = $this->emailModel->where('id_contatct', $contact_id)->first();
+                $data_phone   = $this->phoneModel->where('id_contatct', $contact_id)->first();
 
-                'zip_code'       => $data_address['zip_code'],
-                'country'        => $data_address['country'],
-                'state'          => $data_address['state'],
-                'street_address' => $data_address['street_address'],
-                'address_number' => $data_address['address_number'],
-                'city'           => $data_address['city'],
-                'address_line'   => $data_address['address_line'],
-                'neighborhood'   => $data_address['neighborhood'],
+                $all_contacts[] = [
+                    'id'             => $contact_id,
+                    'name'           => $contact_name,
+                    'description'    => $contact_description,
 
-                'phone'          => $data_phone['phone'],
-                'email'          => $data_email['email'],
-            ];
+                    'zip_code'       => $data_address['zip_code'],
+                    'country'        => $data_address['country'],
+                    'state'          => $data_address['state'],
+                    'street_address' => $data_address['street_address'],
+                    'address_number' => $data_address['address_number'],
+                    'city'           => $data_address['city'],
+                    'address_line'   => $data_address['address_line'],
+                    'neighborhood'   => $data_address['neighborhood'],
+
+                    'phone'          => $data_phone['phone'],
+                    'email'          => $data_email['email'],
+                ];
+            }
+            //Armazena as informações em cache por 3 minutos
+            $this->isFromCache = false;
+            $this->cache->setex('consulta_sql_cache', 180, json_encode($all_contacts));
+        }else{
+            $this->isFromCache = true;
+            $all_contacts = json_decode($data_cache);
         }
 
         return $this->response->setStatusCode(200)->setJSON([
             'success' => true,
             'contacts'=> $all_contacts,
+            'isFromCache' => $this->isFromCache,
             'processing_time'=> $this->calculate_processing_time($time_start),
         ]);
     }
@@ -93,7 +108,8 @@ class Contacts extends BaseController
                 "success"=> false, 
                 "message"=> "Validation error", 
                 "Errors"=> $this->validator->getErrors(),
-                "processing_time" => $this->calculate_processing_time($time_start)
+                'isFromCache' => $this->isFromCache,
+                "processing_time" => $this->calculate_processing_time($time_start),
             ));
         }
 
@@ -120,6 +136,7 @@ class Contacts extends BaseController
                     "success"=> false, 
                     "message"=> "Validation error", 
                     "Errors"=> $this->validator->getErrors(),
+                    'isFromCache' => $this->isFromCache,
                     "processing_time" => $this->calculate_processing_time($time_start)
                 ));
             }else{
@@ -131,6 +148,7 @@ class Contacts extends BaseController
                     return $this->response->setStatusCode(400)->setJSON(array(
                         "success"=> false, "message"=> 
                         "Invalid zip code from ViaCep", 
+                        'isFromCache' => $this->isFromCache,
                         "processing_time" => $this->calculate_processing_time($time_start)
                     ));
                 }else
@@ -163,9 +181,12 @@ class Contacts extends BaseController
                     if($inserted_address && $inserted_phone && $inserted_email)
                     {
                         $db->transCommit();
+
+                        $this->cache->del('consulta_sql_cache');
                         return $this->response->setStatusCode(201)->setJSON(array(
                             "success"=> true, 
                             "message"=> "Contact inserted successfully", 
+                            'isFromCache' => $this->isFromCache,
                             "processing_time" => $this->calculate_processing_time($time_start)
                         ));
                     }else{
@@ -173,6 +194,7 @@ class Contacts extends BaseController
                         return $this->response->setStatusCode(400)->setJSON(array(
                             "success"=> false, "message"=> 
                             "Failed to insert contact", 
+                            'isFromCache' => $this->isFromCache,
                             "processing_time" => $this->calculate_processing_time($time_start)
                         ));
                     }
@@ -184,6 +206,7 @@ class Contacts extends BaseController
             return $this->response->setStatusCode(400)->setJSON(array(
                 "success"=> false, "message"=> 
                 "Failed to insert contact", 
+                'isFromCache' => $this->isFromCache,
                 "processing_time" => $this->calculate_processing_time($time_start)
             ));
         }
@@ -205,6 +228,7 @@ class Contacts extends BaseController
                 "success"=> false, 
                 "message"=> "Validation error", 
                 "Errors"=> $this->validator->getErrors(),
+                'isFromCache' => $this->isFromCache,
                 "processing_time" => $this->calculate_processing_time($time_start)
             ));
         }
@@ -221,6 +245,7 @@ class Contacts extends BaseController
             return $this->response->setStatusCode(404)->setJSON(array(
                 "success"=> false, 
                 "message"=> "Contact not found", 
+                'isFromCache' => $this->isFromCache,
                 "processing_time" => $this->calculate_processing_time($time_start)
             ));
         }else{  
@@ -242,6 +267,7 @@ class Contacts extends BaseController
                         "success"=> false, 
                         "message"=> "Validation error", 
                         "Errors"=> $this->validator->getErrors(),
+                        'isFromCache' => $this->isFromCache,
                         "processing_time" => $this->calculate_processing_time($time_start)
                     ));
                 }else
@@ -254,6 +280,7 @@ class Contacts extends BaseController
                         return $this->response->setStatusCode(400)->setJSON(array(
                             "success"=> false, "message"=> 
                             "Invalid zip code from ViaCep", 
+                            'isFromCache' => $this->isFromCache,
                             "processing_time" => $this->calculate_processing_time($time_start)
                         ));
                     }else
@@ -286,9 +313,11 @@ class Contacts extends BaseController
                         if($updated_address && $updated_phone && $updated_email)
                         {
                             $db->transCommit();
+                            $this->cache->del('consulta_sql_cache');
                             return $this->response->setStatusCode(200)->setJSON(array(
                                 "success"=> true, 
                                 "message"=> "Contact updated successfully", 
+                                'isFromCache' => $this->isFromCache,
                                 "processing_time" => $this->calculate_processing_time($time_start)
                             ));
                         }else{
@@ -296,6 +325,7 @@ class Contacts extends BaseController
                             return $this->response->setStatusCode(400)->setJSON(array(
                                 "success"=> false, "message"=> 
                                 "Failed to update contact", 
+                                'isFromCache' => $this->isFromCache,
                                 "processing_time" => $this->calculate_processing_time($time_start)
                             ));
                         }
@@ -305,6 +335,7 @@ class Contacts extends BaseController
                 $db->transRollback();
                 return $this->response->setStatusCode(400)->setJSON(array(
                     "success"=> false, "message"=> "Failed to update contact", 
+                    'isFromCache' => $this->isFromCache,
                     "processing_time" => $this->calculate_processing_time($time_start)
                 ));
             }
@@ -323,6 +354,7 @@ class Contacts extends BaseController
             return $this->response->setStatusCode(404)->setJSON(array(
                 "success"=> false, 
                 "message"=> "Contact not found", 
+                'isFromCache' => $this->isFromCache,
                 "processing_time" => $this->calculate_processing_time(($time_start))
             ));
         }else{  
@@ -344,12 +376,14 @@ class Contacts extends BaseController
                 return $this->response->setStatusCode(200)->setJSON(array(
                     "success"=> true, 
                     "message"=> "Contact deleted successfully", 
+                    'isFromCache' => $this->isFromCache,
                     "processing_time" => $this->calculate_processing_time($time_start)
                 ));
             }else{
                 return $this->response->setStatusCode(400)->setJSON(array(
                     "success"=> false, 
                     "message"=> "Failed to delete contact", 
+                    'isFromCache' => $this->isFromCache,
                     "processing_time" => $this->calculate_processing_time($time_start)
                 ));
             }
