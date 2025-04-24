@@ -41,13 +41,16 @@ class Contacts extends BaseController
         //Busca pelo cache com a última consulta
         $data_cache = $this->cache->get('consulta_sql_cache');
 
+        //Verifica se existe algum cache dessa request
         if (!$data_cache) {
             $this->addressModel = new AddressModel();
             $this->emailModel   = new EmailModel();
             $this->phoneModel   = new PhoneModel();
 
+            //Busca por todos os contatos existentes
             $data_contacts = $this->contactsModel->findAll();
             
+            //Geração de um campo contendo as informações dos contatos e suas informações adicionais
             $all_contacts = [];
             foreach ($data_contacts as $contact)
             {
@@ -55,10 +58,12 @@ class Contacts extends BaseController
                 $contact_name = $contact['name'];
                 $contact_description = $contact['description'];
 
+                //Busca pelas informações adicionais do contato
                 $data_address = $this->addressModel->where('id_contatct', $contact_id)->first();
                 $data_email   = $this->emailModel->where('id_contatct', $contact_id)->first();
                 $data_phone   = $this->phoneModel->where('id_contatct', $contact_id)->first();
 
+                //Reune todas essas informações para serem exibidas juntas
                 $all_contacts[] = [
                     'id'             => $contact_id,
                     'name'           => $contact_name,
@@ -81,10 +86,12 @@ class Contacts extends BaseController
             $this->isFromCache = false;
             $this->cache->setex('consulta_sql_cache', 180, json_encode($all_contacts));
         }else{
+            //Caso exista um cache, utiliza essas informações sem precisar consultar
             $this->isFromCache = true;
             $all_contacts = json_decode($data_cache);
         }
 
+        //Retorna todas as informações dos contatos
         return $this->response->setStatusCode(200)->setJSON([
             'success' => true,
             'contacts'=> $all_contacts,
@@ -116,21 +123,26 @@ class Contacts extends BaseController
         $db = \Config\Database::connect();
         $db->transStart();
 
+        //Executa a inserção dos dados do contato
         $inserted = $this->contactsModel->insert($data);
         if ($inserted)
         {
             //Captura o id inserido no banco
             $inserted_id = $this->contactsModel->getInsertID();
             
+            //Tabelas adicionais
             $this->addressModel = new AddressModel();
             $this->emailModel   = new EmailModel();
             $this->phoneModel   = new PhoneModel();
 
+            //Executa as validações adicionais em cada Model secundário
             $addressValid = $this->validate($this->addressModel->validationRules);
             $emailValid   = $this->validate($this->emailModel->validationRules);
             $phoneValid   = $this->validate($this->phoneModel->validationRules);
-            if(!$addressValid || !$emailValid && !$phoneValid)
+
+            if(!$addressValid || !$emailValid || !$phoneValid)
             {
+                //Caso alguma validação tenha falhado, desfaz as alterações no banco
                 $db->transRollback();
                 return $this->response->setStatusCode(422)->setJSON(array(
                     "success"=> false, 
@@ -144,6 +156,7 @@ class Contacts extends BaseController
                 $data_zip_code_valid = $this->addressModel->validate_viacep($data->zip_code);
                 if(isset($data_zip_code_valid['erro']))
                 {
+                    //Caso falhe a validação pelo ViaCep, desfaz as alterações no banco
                     $db->transRollback();
                     return $this->response->setStatusCode(400)->setJSON(array(
                         "success"=> false, "message"=> 
@@ -153,6 +166,7 @@ class Contacts extends BaseController
                     ));
                 }else
                 {
+                    //Reune as informações de cada tabela adicional e efetua a inserção dos dados
                     $data_address = [
                         'id_contatct'    => $inserted_id,
                         'zip_code'       => $data->zip_code,
@@ -178,6 +192,7 @@ class Contacts extends BaseController
                     ];
                     $inserted_email = $this->emailModel->insert($data_email);
     
+                    //Caso todas as inserções tenham sido realizadas com sucesso, confirma as alterações no banco
                     if($inserted_address && $inserted_phone && $inserted_email)
                     {
                         $db->transCommit();
@@ -190,6 +205,7 @@ class Contacts extends BaseController
                             "processing_time" => $this->calculate_processing_time($time_start)
                         ));
                     }else{
+                        //Caso falhe alguma inserção, desfaz todas as alterações do banco
                         $db->transRollback();
                         return $this->response->setStatusCode(400)->setJSON(array(
                             "success"=> false, "message"=> 
@@ -202,6 +218,7 @@ class Contacts extends BaseController
             }
             
         }else{
+            //Caso falhe a inserção do contato inicial, desfaz todas as alterações do banco
             $db->transRollback();
             return $this->response->setStatusCode(400)->setJSON(array(
                 "success"=> false, "message"=> 
@@ -249,6 +266,7 @@ class Contacts extends BaseController
                 "processing_time" => $this->calculate_processing_time($time_start)
             ));
         }else{  
+            //Executa a alteração dos registros em contacts
             $updated = $this->contactsModel->update($data_id, (array) $data);
             
             //Caso o updated tenha tido algum problema, retorna false
@@ -256,12 +274,14 @@ class Contacts extends BaseController
                 $this->addressModel = new AddressModel();
                 $this->emailModel   = new EmailModel();
                 $this->phoneModel   = new PhoneModel();
-
+                
+                //Executa as validações dos Models adicionais
                 $addressValid = $this->validate($this->addressModel->validationRules);
                 $emailValid   = $this->validate($this->emailModel->validationRules);
                 $phoneValid   = $this->validate($this->phoneModel->validationRules);
                 if(!$addressValid || !$emailValid && !$phoneValid)
                 {
+                    //Caso a validação falhe, cancela as modificações feitas
                     $db->transRollback();
                     return $this->response->setStatusCode(422)->setJSON(array(
                         "success"=> false, 
@@ -276,6 +296,7 @@ class Contacts extends BaseController
                     $data_zip_code_valid = $this->addressModel->validate_viacep($data->zip_code);
                     if(isset($data_zip_code_valid['erro']))
                     {
+                        //Caso não passe na validação do ViaCep, cancela as modificações feitas
                         $db->transRollback();
                         return $this->response->setStatusCode(400)->setJSON(array(
                             "success"=> false, "message"=> 
@@ -285,8 +306,8 @@ class Contacts extends BaseController
                         ));
                     }else
                     {
+                        //Monta a $data de acordo com os dados das tabelas adicionais e executa as alterações
                         $data_address = [
-                            //'id_contatct'    => $data_id,
                             'zip_code'       => $data->zip_code,
                             'country'        => $data->country,
                             'state'          => $data->state,
@@ -299,17 +320,16 @@ class Contacts extends BaseController
                         $updated_address = $this->addressModel->where('id_contatct', $id)->set($data_address)->update();  
         
                         $data_phone = [
-                            //'id_contatct'    => $data_id,
                             'phone'          => $data->phone,
                         ];
                         $updated_phone = $this->phoneModel->where('id_contatct', $id)->set($data_phone)->update();  
         
                         $data_email = [
-                            //'id_contatct'    => $data_id,
                             'email'          => $data->email,
                         ];
                         $updated_email = $this->emailModel->where('id_contatct', $id)->set($data_email)->update(); 
         
+                        //Caso todas as alterações tenham sido realizadas com sucesso, confirma as modificações no banco
                         if($updated_address && $updated_phone && $updated_email)
                         {
                             $db->transCommit();
@@ -321,6 +341,7 @@ class Contacts extends BaseController
                                 "processing_time" => $this->calculate_processing_time($time_start)
                             ));
                         }else{
+                            //Caso algum update tenha falhado, desfaz todas as modificações no banco
                             $db->transRollback();
                             return $this->response->setStatusCode(400)->setJSON(array(
                                 "success"=> false, "message"=> 

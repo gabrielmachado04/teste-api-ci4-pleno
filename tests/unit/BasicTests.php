@@ -140,4 +140,99 @@ final class BasicTests extends FeatureTestCase
         $this->assertEquals($response->success, 1);
         $this->assertEquals($status_code, 200);
     }
+
+    //Teste de update de um contato sem enviar o nome
+    public function testUpdateNonExistentName()
+    {           
+        
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+        CURLOPT_URL => 'http://localhost/teste-api-ci4-pleno/public/contacts/4',
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => '',
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 0,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => 'PUT',
+        CURLOPT_POSTFIELDS =>'{
+            "description": "Contato de exemplo para testes na API",
+
+            "zip_code": "36703-000",
+            "country": "Brasil",
+            "state": "SP",
+            "street_address": "Rua Exemplo",
+            "address_number": "123",
+            "city": "São Paulo",
+            "address_line": "Apartamento 45",
+            "neighborhood": "Bela Vista",
+
+            "phone": "11999998888",
+            "email": "joao.silva@example.com"
+        }',
+        CURLOPT_HTTPHEADER => array(
+            'Content-Type: application/json'
+        ),
+        ));
+
+        $response = curl_exec($curl);
+        $status_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+
+        curl_close($curl);
+        
+        $response = json_decode($response);
+        var_dump($response);
+
+        $this->assertEquals($response->success, 0);
+        $this->assertEquals($status_code, 422);
+    }
+
+    //Teste de update de um contato enviando um e-mail inválido
+    public function testUpdateInvalidEmail()
+    {           
+        
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+        CURLOPT_URL => 'http://localhost/teste-api-ci4-pleno/public/contacts/4',
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => '',
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 0,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => 'PUT',
+        CURLOPT_POSTFIELDS =>'{
+            "name": "João da Silva Santos",
+            "description": "Contato de exemplo para testes na API",
+
+            "zip_code": "36703-000",
+            "country": "Brasil",
+            "state": "SP",
+            "street_address": "Rua Exemplo",
+            "address_number": "123",
+            "city": "São Paulo",
+            "address_line": "Apartamento 45",
+            "neighborhood": "Bela Vista",
+
+            "phone": "11999998888",
+            "email": "joao.silva.example.com"
+        }',
+        CURLOPT_HTTPHEADER => array(
+            'Content-Type: application/json'
+        ),
+        ));
+
+        $response = curl_exec($curl);
+        $status_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+
+        curl_close($curl);
+        
+        $response = json_decode($response);
+        var_dump($response);
+
+        $this->assertEquals($response->success, 0);
+        $this->assertEquals($status_code, 422);
+    }
 }

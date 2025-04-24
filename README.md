@@ -7,13 +7,14 @@ Esta é uma API simples construída com CodeIgniter 4 para o gerenciamento de co
 - CodeIgniter4 (Framework)
 - PHP 8.0
 - MySQL
+- Cache Redis
 
 ## Instalação do projeto
 
 Para fazer a instalação do projeto, primeiro clone o repositório para sua máquina.
 
 ```bash
-  git clone https://github.com/gabrielmachado04/teste-api-ci4-pleno
+  git clone https://github.com/gabrielmachado04/teste-api-ci4-pleno.git
 ```
 
 Após este primeiro passo, configure os arquivos essenciais como nome do banco de dados e credenciais.
