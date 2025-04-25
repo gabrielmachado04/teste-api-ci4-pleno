@@ -26,6 +26,12 @@ Baixe e instale o Composer.
   https://getcomposer.org/Composer-Setup.exe
 ```
 
+Depois instale todas as dependências do projeto utilizando o composer.
+
+```bash
+  composer install
+```
+
 Em seguida, execute os comandos para geração dos bancos e fazer a primeira população de dados para a execução dos testes.
 
 ```bash
